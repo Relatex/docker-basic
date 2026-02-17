@@ -1,0 +1,92 @@
+# =============================================
+# LDAP Testdaten - Beispiel-Benutzer und Gruppen
+# =============================================
+# Domain: example.local (anpassen in .env via LDAP_DOMAIN)
+# Admin-Passwort: admin123 (anpassen in .env via LDAP_ADMIN_PASSWORD)
+# User-Passwort: password123 (fuer alle Testbenutzer)
+#
+# Import:
+#   docker cp ldap/example-users.ldif <projektname>-openldap:/tmp/
+#   docker exec <projektname>-openldap ldapadd -x \
+#     -D "cn=admin,dc=example,dc=local" -w admin123 \
+#     -f /tmp/example-users.ldif
+
+# ===== ORGANISATIONSEINHEITEN =====
+
+dn: ou=Users,dc=example,dc=local
+objectClass: organizationalUnit
+ou: Users
+
+dn: ou=Groups,dc=example,dc=local
+objectClass: organizationalUnit
+ou: Groups
+
+# ===== BENUTZER =====
+
+# Administrator
+dn: uid=admin,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: admin
+cn: Admin User
+sn: User
+givenName: Admin
+mail: admin@example.local
+userPassword: password123
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/admin
+loginShell: /bin/bash
+title: Administrator
+departmentNumber: IT
+
+# Max Mustermann - Beispiel-Benutzer
+dn: uid=max.mustermann,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: max.mustermann
+cn: Max Mustermann
+sn: Mustermann
+givenName: Max
+mail: max.mustermann@example.local
+userPassword: password123
+uidNumber: 10002
+gidNumber: 10002
+homeDirectory: /home/max.mustermann
+loginShell: /bin/bash
+title: Projektleiter
+departmentNumber: Entwicklung
+
+# Erika Musterfrau - Beispiel-Benutzerin
+dn: uid=erika.musterfrau,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: erika.musterfrau
+cn: Erika Musterfrau
+sn: Musterfrau
+givenName: Erika
+mail: erika.musterfrau@example.local
+userPassword: password123
+uidNumber: 10003
+gidNumber: 10003
+homeDirectory: /home/erika.musterfrau
+loginShell: /bin/bash
+title: Teamleiterin
+departmentNumber: Verwaltung
+
+# ===== GRUPPEN =====
+
+dn: cn=App_Benutzer,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: App_Benutzer
+member: uid=admin,ou=Users,dc=example,dc=local
+member: uid=max.mustermann,ou=Users,dc=example,dc=local
+member: uid=erika.musterfrau,ou=Users,dc=example,dc=local
+
+dn: cn=App_Admin,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: App_Admin
+member: uid=admin,ou=Users,dc=example,dc=local

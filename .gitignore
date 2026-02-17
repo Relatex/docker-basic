@@ -1,0 +1,28 @@
+# Environment
+.env
+.env.local
+.env.*.local
+laravel.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker Volumes (falls lokal getestet)
+volumes/
+
+# Registry (lokal, nicht committen)
+registry/

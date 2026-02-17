@@ -1,0 +1,59 @@
+# LDAP Testdaten importieren
+
+## Voraussetzungen
+
+Container muessen laufen: `docker compose up -d`
+
+## Import
+
+```bash
+# LDIF in Container kopieren
+docker cp ldap/example-users.ldif <projektname>-openldap:/tmp/
+
+# Importieren
+docker exec <projektname>-openldap ldapadd -x \
+  -D "cn=admin,dc=example,dc=local" \
+  -w admin123 \
+  -f /tmp/example-users.ldif
+```
+
+## Testen
+
+```bash
+# Alle Benutzer suchen
+docker exec <projektname>-openldap ldapsearch -x -H ldap://localhost \
+  -b "dc=example,dc=local" \
+  -D "cn=admin,dc=example,dc=local" \
+  -w admin123 \
+  "(objectClass=inetOrgPerson)"
+
+# Einzelnen Benutzer suchen
+docker exec <projektname>-openldap ldapsearch -x -H ldap://localhost \
+  -b "dc=example,dc=local" \
+  -D "cn=admin,dc=example,dc=local" \
+  -w admin123 \
+  "(uid=max.mustermann)"
+```
+
+## Testbenutzer
+
+| uid               | Name              | Passwort    | Rolle        |
+|-------------------|-------------------|-------------|--------------|
+| admin             | Admin User        | password123 | Administrator|
+| max.mustermann    | Max Mustermann    | password123 | Projektleiter|
+| erika.musterfrau  | Erika Musterfrau  | password123 | Teamleiterin |
+
+## Zuruecksetzen
+
+```bash
+# LDAP-Daten komplett loeschen und neu starten
+docker compose down -v
+docker compose up -d
+# Dann erneut importieren
+```
+
+## Anpassen
+
+Die Domain `example.local` und das Admin-Passwort `admin123` werden durch
+die LDAP_DOMAIN und LDAP_ADMIN_PASSWORD Variablen in der Docker `.env` gesteuert.
+Bei Aenderung muessen die LDIF-Dateien entsprechend angepasst werden.
