@@ -548,6 +548,27 @@ cmd_init_laravel() {
             docker exec "$container_name" php artisan key:generate
             log_success "APP_KEY wurde generiert."
 
+            # Warten bis MySQL bereit ist
+            log_info "Warte auf MySQL-Verbindung..."
+            local mysql_container="${PROJECT_NAME}-mysql"
+            local max_attempts=30
+            local attempt=1
+            while [ $attempt -le $max_attempts ]; do
+                if docker exec "$mysql_container" mysqladmin ping -h localhost --silent > /dev/null 2>&1; then
+                    break
+                fi
+                if [ $attempt -eq $max_attempts ]; then
+                    log_error "MySQL nicht erreichbar nach ${max_attempts} Versuchen."
+                    log_error "Pruefe ob der MySQL-Container laeuft: docker compose ps"
+                    exit 1
+                fi
+                echo -n "."
+                sleep 2
+                attempt=$((attempt + 1))
+            done
+            echo ""
+            log_success "MySQL ist bereit."
+
             # Migration auf MySQL ausfuehren
             log_info "Fuehre Datenbank-Migration aus (MySQL)..."
             docker exec "$container_name" php artisan migrate --force
