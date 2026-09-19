@@ -137,6 +137,8 @@ calc_ports() {
     REDIS_PORT=$((6379 + index))
     LDAP_PORT=$((389 + index))
     LDAPS_PORT=$((636 + index))
+    MAILPIT_SMTP_PORT=$((1025 + index))
+    MAILPIT_UI_PORT=$((APP_PORT + 82))
     DOCKER_SUBNET="172.$((20 + index)).0.0/16"
 }
 
@@ -247,6 +249,8 @@ MYSQL_PORT=$MYSQL_PORT
 REDIS_PORT=$REDIS_PORT
 LDAP_PORT=$LDAP_PORT
 LDAPS_PORT=$LDAPS_PORT
+MAILPIT_SMTP_PORT=$MAILPIT_SMTP_PORT
+MAILPIT_UI_PORT=$MAILPIT_UI_PORT
 
 # ============================================
 # MySQL
@@ -451,6 +455,7 @@ print(data['projects']['$name']['index'])
     echo -e "  MySQL:          ${CYAN}localhost:${MYSQL_PORT}${NC}"
     echo -e "  Redis:          ${CYAN}localhost:${REDIS_PORT}${NC}"
     echo -e "  LDAP:           ${CYAN}localhost:${LDAP_PORT}${NC}"
+    echo -e "  Mailpit:        ${CYAN}http://localhost:${MAILPIT_UI_PORT}${NC}"
     echo -e "  Subnet:         ${CYAN}${DOCKER_SUBNET}${NC}"
     echo -e "  User:           ${CYAN}${WWWUSER}:${WWWGROUP}${NC}"
     echo ""
