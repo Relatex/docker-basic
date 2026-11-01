@@ -1,6 +1,6 @@
 # Laravel Docker Setup
 
-Wiederverwendbares Docker-Template fuer Laravel 11 Projekte mit automatischer Port-Verwaltung.
+Wiederverwendbares Docker-Template fuer Laravel 13 Projekte mit automatischer Port-Verwaltung.
 
 ## Enthaltene Services
 
@@ -92,7 +92,7 @@ docker compose ps
 ```
 
 Das Skript erledigt automatisch:
-- Installiert Laravel 11 via Composer
+- Installiert Laravel 13 via Composer
 - Korrigiert Dateiberechtigungen (WSL-kompatibel)
 - Deployt eine vorkonfigurierte `.env` (MySQL, Redis, LDAP)
 - Generiert den APP_KEY
@@ -119,7 +119,7 @@ docker exec <projektname>-app npm install
 ```bash
 ./setup.sh                    # Interaktive Einrichtung
 ./setup.sh <projektname>      # Direkte Einrichtung
-./setup.sh init-laravel       # Laravel 11 installieren + .env deployen
+./setup.sh init-laravel       # Laravel 13 installieren + .env deployen
 ./setup.sh list               # Alle registrierten Projekte anzeigen
 ./setup.sh remove <name>      # Projekt aus Registry entfernen
 ./setup.sh status             # Laufende Container aller Projekte

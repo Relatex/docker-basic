@@ -34,6 +34,9 @@ REGISTRY_FILE="$REGISTRY_DIR/registry.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="$SCRIPT_DIR/../src"
 
+# Laravel-Hauptversion fuer init-laravel
+LARAVEL_VERSION="13"
+
 # ============================================
 # Hilfsfunktionen
 # ============================================
@@ -370,7 +373,7 @@ LDAP_USE_TLS=false
 # Mail (Mailpit fuer Entwicklung empfohlen)
 # ============================================
 MAIL_MAILER=smtp
-MAIL_HOST=127.0.0.1
+MAIL_HOST=mailpit
 MAIL_PORT=1025
 MAIL_USERNAME=null
 MAIL_PASSWORD=null
@@ -478,7 +481,7 @@ cmd_init_laravel() {
     local container_name="${PROJECT_NAME}-app"
 
     # Pruefen ob Container laeuft
-    if ! docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
+    if ! docker ps --format '{{.Names}}' | grep "^${container_name}$" > /dev/null; then
         log_error "Container '${container_name}' laeuft nicht."
         log_error "Zuerst: docker compose up -d"
         exit 1
@@ -492,16 +495,25 @@ cmd_init_laravel() {
 
     # Pruefen ob src/ leer ist (oder nur .gitkeep enthaelt)
     local file_count
-    file_count=$(find "$SRC_DIR" -mindepth 1 -not -name '.gitkeep' -not -name '.git' | head -5 | wc -l)
+    file_count=$(find "$SRC_DIR" -mindepth 1 -not -name '.gitkeep' -not -name '.git' -print -quit | wc -l)
 
     if [ "$file_count" -gt 0 ]; then
+        # Abgebrochene Installation: composer.json ohne vendor/ und ohne Git-Repo
+        local incomplete=false
+        if [ -f "$SRC_DIR/composer.json" ] && [ ! -d "$SRC_DIR/vendor" ] && [ ! -e "$SRC_DIR/.git" ]; then
+            incomplete=true
+        fi
+
         log_warn "Das Verzeichnis src/ ist nicht leer."
         echo ""
         echo -e "  Optionen:"
         echo -e "  ${CYAN}1${NC}) Laravel .env trotzdem nach src/.env kopieren (bestehende wird ueberschrieben)"
         echo -e "  ${CYAN}2${NC}) Abbrechen"
+        if [ "$incomplete" = true ]; then
+            echo -e "  ${CYAN}3${NC}) Abgebrochene Installation: src/ komplett leeren und Laravel neu installieren"
+        fi
         echo ""
-        read -rp "  Auswahl [1/2]: " choice
+        read -rp "  Auswahl: " choice
 
         case "$choice" in
             1)
@@ -516,24 +528,37 @@ cmd_init_laravel() {
                 else
                     log_error "laravel.env nicht gefunden. Zuerst ./setup.sh <projektname> ausfuehren."
                 fi
+                return
+                ;;
+            3)
+                if [ "$incomplete" != true ]; then
+                    log_info "Abgebrochen."
+                    return
+                fi
+                # Dateien gehoeren root, daher Loeschen ueber den Container
+                docker exec "$container_name" find /var/www/html -mindepth 1 -delete
+                log_success "src/ wurde geleert."
                 ;;
             *)
                 log_info "Abgebrochen."
+                return
                 ;;
         esac
-        return
     fi
 
     # src/ ist leer -> Laravel installieren
     echo ""
-    echo -e "${BOLD}Laravel 11 Installation${NC}"
+    echo -e "${BOLD}Laravel ${LARAVEL_VERSION} Installation${NC}"
     echo ""
-    log_info "Installiere Laravel 11 via Composer..."
+    log_info "Installiere Laravel ${LARAVEL_VERSION} via Composer..."
 
-    docker exec "$container_name" composer create-project laravel/laravel . "11.*"
+    # Erst in ein Temp-Verzeichnis installieren, damit ein Fehlschlag src/ nicht verschmutzt
+    local install_dir="/tmp/laravel-install"
+    docker exec "$container_name" rm -rf "$install_dir"
 
-    if [ $? -eq 0 ]; then
-        log_success "Laravel 11 installiert."
+    if docker exec "$container_name" composer create-project laravel/laravel "$install_dir" "${LARAVEL_VERSION}.*"; then
+        docker exec "$container_name" sh -c "cp -a ${install_dir}/. /var/www/html/ && rm -rf ${install_dir}"
+        log_success "Laravel ${LARAVEL_VERSION} installiert."
 
         # Berechtigungen korrigieren (Composer lief als Root im Container)
         log_info "Korrigiere Dateiberechtigungen..."
@@ -588,9 +613,14 @@ cmd_init_laravel() {
         docker exec "$container_name" chown -R "${WWWUSER:-1000}:${WWWGROUP:-1000}" /var/www/html
         log_success "Laravel Debugbar installiert."
 
+        # Worker und Scheduler sind ohne artisan auf FATAL gelaufen -> neu starten
+        log_info "Starte Queue-Worker und Scheduler neu..."
+        docker exec "$container_name" supervisorctl restart 'laravel-worker:*' laravel-scheduler
+        log_success "Queue-Worker und Scheduler laufen."
+
         echo ""
         echo -e "${GREEN}========================================${NC}"
-        log_success "Laravel 11 ist bereit!"
+        log_success "Laravel ${LARAVEL_VERSION} ist bereit!"
         echo -e "${GREEN}========================================${NC}"
         echo ""
         echo -e "${BOLD}Erreichbar unter:${NC}"
@@ -722,7 +752,7 @@ cmd_help() {
     echo -e "  1. ${CYAN}./setup.sh mein-projekt${NC}        Projekt registrieren + .env generieren"
     echo -e "  2. ${CYAN}docker compose build${NC}           Image bauen"
     echo -e "  3. ${CYAN}docker compose up -d${NC}           Container starten"
-    echo -e "  4. ${CYAN}./setup.sh init-laravel${NC}        Laravel 11 installieren + konfigurieren"
+    echo -e "  4. ${CYAN}./setup.sh init-laravel${NC}        Laravel ${LARAVEL_VERSION} installieren + konfigurieren"
     echo ""
     echo -e "Port-Schema (pro Projekt-Index):"
     echo -e "  App:       8000 + (Index * 100)"
