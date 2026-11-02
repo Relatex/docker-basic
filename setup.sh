@@ -242,6 +242,15 @@ WWWGROUP=$WWWGROUP
 DOCKER_SUBNET=$DOCKER_SUBNET
 
 # ============================================
+# Erreichbarkeit (Docker umgeht die Firewall)
+# 127.0.0.1 = nur lokal, Zugriff von aussen per SSH-Tunnel
+# 0.0.0.0   = alle Schnittstellen, fuer Datenbank und Admin-Werkzeuge nie
+#             auf einem Server mit oeffentlicher IP
+# ============================================
+BIND_IP=127.0.0.1
+APP_BIND_IP=127.0.0.1
+
+# ============================================
 # Ports (automatisch zugewiesen)
 # ============================================
 APP_PORT=$APP_PORT

@@ -150,6 +150,20 @@ Die Datei wird beim ersten `./setup.sh`-Aufruf automatisch erstellt. So koennen 
 | LDAP        | 389 + Index         | 389       | 390       | 391       |
 | Subnet      | 172.(20+Index)      | 172.20    | 172.21    | 172.22    |
 
+### Erreichbarkeit der Ports
+
+Alle Ports sind standardmaessig nur auf `127.0.0.1` gebunden. Docker traegt veroeffentlichte Ports an der Firewall (ufw) vorbei ein, ein offener Port ist also wirklich offen.
+
+| Variable in `.env` | Gilt fuer | Standard |
+|---|---|---|
+| `BIND_IP` | MySQL, Redis, phpMyAdmin, LDAP, LDAP-Admin, Mailpit | `127.0.0.1` |
+| `APP_BIND_IP` | Anwendung (nginx) | `127.0.0.1` |
+
+- Lokal unter WSL oder per VS Code Remote-SSH (Port-Weiterleitung) reicht `127.0.0.1`.
+- Auf einem Server mit oeffentlicher IP Werkzeuge per SSH-Tunnel oeffnen, z. B. `ssh -L 8080:localhost:8080 user@server`.
+- `APP_BIND_IP=0.0.0.0` veroeffentlicht nur die Anwendung. `BIND_IP=0.0.0.0` nie auf einem oeffentlichen Server setzen: MySQL laeuft mit Standardpasswoertern, phpMyAdmin meldet jeden Besucher automatisch als root an, Redis hat kein Passwort.
+- Nach einer Aenderung `docker compose up -d` ausfuehren.
+
 ---
 
 ## Verzeichnisstruktur
